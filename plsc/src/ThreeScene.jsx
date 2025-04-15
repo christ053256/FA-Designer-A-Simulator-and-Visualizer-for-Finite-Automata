@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import './ThreeScene.css';
 
+
 // HelpModal Component
 const HelpModal = ({ onClose }) => {
   return (
@@ -26,7 +27,10 @@ const HelpModal = ({ onClose }) => {
           <li>
             Any input string not following these rules is rejected.
           </li>
-        </ul>
+        </ul><br></br>
+        <p>
+        You may freely drag and zoom the objects within the model until you are comfortable navigating and interacting with it.
+        </p>
         <footer>
           <p>Built by Isiderio, Christian A. 📌</p>
         </footer>
@@ -42,6 +46,7 @@ const ThreeScene = () => {
   const [currentState, setCurrentState] = useState('q0');
   const [isAccepted, setIsAccepted] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isProcessDone, setIsProcessDone] = useState(true);
   const [currentChar, setCurrentChar] = useState('');
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [animationFrameId, setAnimationFrameId] = useState(null);
@@ -91,7 +96,7 @@ const ThreeScene = () => {
     }
     return input[input.length];
   };
-
+  
   // Process input string through DFA with animation
   const processInputStep = async () => {
     if (isAnimating) return;
@@ -120,7 +125,6 @@ const ThreeScene = () => {
     }
     
     let state = 'q0';
-    
     // Process each character with delay
     for (let i = 0; i < inputString.length; i++) {
       const char = inputString[i];
@@ -129,7 +133,6 @@ const ThreeScene = () => {
       // Update UI
       setCurrentIndex(i);
       setCurrentChar(char);
-      
       // Get the transition key and highlight the arrow
       const transitionKey = getTransitionKey(state, nextState, char);
       
@@ -137,14 +140,14 @@ const ThreeScene = () => {
       if (arrows[transitionKey]) {
         // Flash the arrow
         if (arrows[transitionKey].material) {
-          arrows[transitionKey].material.color.set(0xffff00); // Yellow highlight
+          arrows[transitionKey].material.color.set(0xffff00);
         }
         if (arrows[transitionKey].head && arrows[transitionKey].head.material) {
           arrows[transitionKey].head.material.color.set(0xffff00);
         }
         
         // Wait for animation
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Reset this arrow color
         if (arrows[transitionKey].material) {
@@ -156,14 +159,18 @@ const ThreeScene = () => {
       }
       
       state = nextState;
+      setIsAccepted(state === 'q1');
       setCurrentState(state);
-      
+      if(i === ((inputString.length)-1)){
+        setIsProcessDone(i === ((inputString.length)-1));
+        return;
+      }
+    
       // Wait between transitions
       await new Promise(resolve => setTimeout(resolve, 200));
     }
     
     // Final state
-    setIsAccepted(state === 'q1');
     setIsAnimating(false);
   };
 
@@ -237,7 +244,7 @@ const ThreeScene = () => {
     
     // q2 - Reject state (red)
     const q2Material = new THREE.MeshPhongMaterial({ 
-      color: 0xe74c3c,
+      color: 0x3498db,
       transparent: true,
       opacity: 0.8
     });
@@ -383,23 +390,24 @@ const ThreeScene = () => {
     
     // Create transitions with their keys for animation
     createArrow(q0Sphere.position, q1Sphere.position, 0x3498db, 1, '^[a-zA-Z_][a-zA-Z0-9_]*$', 'q0-q1');
-    createArrow(q0Sphere.position, q2Sphere.position, 0xe74c3c, -1, 'other', 'q0-q2');
-    createArrow(q1Sphere.position, q1Sphere.position, 0x2ecc71, 2, '^[a-zA-Z_][a-zA-Z0-9_]*$', 'q1-q1');
-    createArrow(q1Sphere.position, q2Sphere.position, 0xe74c3c, 0, 'other', 'q1-q2');
+    createArrow(q0Sphere.position, q2Sphere.position, 0x3498db, -1, '[0-9]*non-accepted input', 'q0-q2');
+    createArrow(q1Sphere.position, q1Sphere.position, 0x3498db, 2, '^[a-zA-Z_][a-zA-Z0-9_]*$', 'q1-q1');
+    createArrow(q1Sphere.position, q2Sphere.position, 0x3498db, 0, 'other', 'q1-q2');
     
     // Self-loop for q2
-    const q2SelfLoop = new THREE.TorusGeometry(1.5, 0.05, 16, 50);
-    const q2LoopMaterial = new THREE.MeshBasicMaterial({ color: 0xe74c3c });
+    const q2SelfLoop = new THREE.TorusGeometry(1.05, 0.05, 10, 30);
+    const q2LoopMaterial = new THREE.MeshBasicMaterial({ color: 0x3498db });
     const q2Loop = new THREE.Mesh(q2SelfLoop, q2LoopMaterial);
     q2Loop.position.copy(q2Sphere.position);
     q2Loop.position.y += 2;
-    q2Loop.rotation.x = Math.PI / 2;
+    q2Loop.rotation.x = Math.PI;  // Stand it up along the X-axis
+    q2Loop.rotation.y = Math.PI; // Rotate 180 degrees along the Y-axis to face the front
     scene.add(q2Loop);
     
     // Store reference for q2 self-loop (if needed in the arrowsRef)
     arrowsRef['q2-q2'] = {
       material: q2LoopMaterial,
-      originalColor: 0xe74c3c,
+      originalColor: 0x3498db,
       midPoint: new THREE.Vector3().copy(q2Sphere.position).add(new THREE.Vector3(0, 3, 0))
     };
     
@@ -424,7 +432,7 @@ const ThreeScene = () => {
     // --- Add revolving arrow on q2 loop ---
     const q2LoopCenter = new THREE.Vector3().copy(q2Sphere.position);
     q2LoopCenter.y += 2;
-    const loopRadius = 1.5;  // Same as the torus radius
+    const loopRadius = 1.05;  // Same as the torus radius
     let theta = 0;  // Initial angle for the revolving arrow on q2
     
     const loopArrowGeometry = new THREE.ConeGeometry(0.2, 0.5, 32);
@@ -443,22 +451,24 @@ const ThreeScene = () => {
     
     // --- Add static loop and revolving arrow on q1 ---
     // Create a static loop above q1 (separate from the double circle already drawn)
-    const q1SelfLoop = new THREE.TorusGeometry(1.5, 0.05, 16, 50);
+    const q1SelfLoop = new THREE.TorusGeometry(1.05, 0.05, 16, 30);
     const q1LoopMaterial = new THREE.MeshBasicMaterial({ color: 0x2ecc71 });
     const q1LoopMesh = new THREE.Mesh(q1SelfLoop, q1LoopMaterial);
     q1LoopMesh.position.copy(q1Sphere.position);
     q1LoopMesh.position.y += 2;
-    q1LoopMesh.rotation.x = Math.PI / 2;
+    q1LoopMesh.rotation.x = Math.PI;
+    q1LoopMesh.rotation.y = Math.PI;
     scene.add(q1LoopMesh);
     
     // Create revolving arrow for q1 loop
     const q1LoopCenter = new THREE.Vector3().copy(q1Sphere.position);
     q1LoopCenter.y += 2;
-    const q1LoopRadius = 1.5;
+    const q1LoopRadius = 1.05;
     let theta1 = 0;  // Initial angle for q1 revolving arrow
     const q1LoopArrowGeometry = new THREE.ConeGeometry(0.2, 0.5, 32);
     const q1LoopArrowMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const q1LoopArrow = new THREE.Mesh(q1LoopArrowGeometry, q1LoopArrowMaterial);
+
     q1LoopArrow.position.set(
       q1LoopCenter.x + q1LoopRadius * Math.cos(theta1),
       q1LoopCenter.y,
@@ -481,7 +491,7 @@ const ThreeScene = () => {
     
     // Add indicator arrow to show current state
     const indicatorGeometry = new THREE.ConeGeometry(0.3, 0.8, 32);
-    const indicatorMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    const indicatorMaterial = new THREE.MeshBasicMaterial({ color: 0x3498db });
     const indicator = new THREE.Mesh(indicatorGeometry, indicatorMaterial);
     indicator.position.copy(q0Sphere.position);
     indicator.position.y += 3;
@@ -496,10 +506,13 @@ const ThreeScene = () => {
       let targetPosition;
       if (currentState === 'q0') {
         targetPosition = q0Sphere.position.clone();
+        indicatorMaterial.color.set(0xff0000);
       } else if (currentState === 'q1') {
         targetPosition = q1Sphere.position.clone();
+        indicatorMaterial.color.set(0x00ff00);
       } else {
         targetPosition = q2Sphere.position.clone();
+        indicatorMaterial.color.set(0xff0000);
       }
       
       // Adjust y position to be above the sphere
@@ -531,21 +544,33 @@ const ThreeScene = () => {
       
       // Update controls
       controls.update();
-      
+      // console.log(currentState);
       // Update revolving arrow on q2 loop
-      theta += 0.05;
-      const newX = q2LoopCenter.x + loopRadius * Math.cos(theta);
-      const newZ = q2LoopCenter.z + loopRadius * Math.sin(theta);
-      loopArrow.position.set(newX, q2LoopCenter.y, newZ);
-      tangent.set(-Math.sin(theta), 0, Math.cos(theta));
+      if(currentState === 'q2'){
+        theta += 0.05;
+      }else{
+        theta += 0;
+      }
+      
+      const newX = q2LoopCenter.x + loopRadius * Math.sin(theta);
+      const newY = q2LoopCenter.y + loopRadius * Math.cos(theta);
+      
+      loopArrow.position.set(newX, newY, q2LoopCenter.z);
+      tangent.set(Math.cos(theta), -Math.sin(theta), 0);
       loopArrow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
       
       // Update revolving arrow on q1 loop
-      theta1 += 0.05;
-      const newQ1X = q1LoopCenter.x + q1LoopRadius * Math.cos(theta1);
-      const newQ1Z = q1LoopCenter.z + q1LoopRadius * Math.sin(theta1);
-      q1LoopArrow.position.set(newQ1X, q1LoopCenter.y, newQ1Z);
-      q1Tangent.set(-Math.sin(theta1), 0, Math.cos(theta1));
+      
+      if(currentState === 'q1'){
+        theta1 += 0.05;
+      }else{
+        theta1 += 0;
+      }
+      
+      const newQ1X = q1LoopCenter.x + q1LoopRadius * Math.sin(theta1);
+      const newQ1Y = q1LoopCenter.y + q1LoopRadius * Math.cos(theta1);
+      q1LoopArrow.position.set(newQ1X, newQ1Y, q1LoopCenter.z);
+      q1Tangent.set(Math.cos(theta1), -Math.sin(theta1), 0);
       q1LoopArrow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), q1Tangent);
       
       // Render scene
