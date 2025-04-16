@@ -3,38 +3,168 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import './ThreeScene.css';
 
+const ThemeToggle = ({ isDarkMode, toggleDarkMode }) => {
+  return (
+    <div className="theme-toggle" onClick={toggleDarkMode}>
+      <svg 
+        className="theme-icon sun" 
+        xmlns="http://www.w3.org/2000/svg" 
+        width="24" 
+        height="24" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>
+      <svg 
+        className="theme-icon moon" 
+        xmlns="http://www.w3.org/2000/svg" 
+        width="24" 
+        height="24" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      >
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      </svg>
+    </div>
+  );
+};
 
 // HelpModal Component
 const HelpModal = ({ onClose }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
+  
+  useEffect(() => {
+    // Trigger animation after component mounts
+    setIsVisible(true);
+    
+    // Add escape key listener
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(onClose, 300); // Wait for exit animation
+  };
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>Language Rules Information</h2>
-        <p>
-          This modal explains the rules for identifiers recognized by the DFA:
-        </p>
-        <p>
-          <strong>Language:</strong> Variable names that start with a letter or underscore, followed by letters, digits, and underscores.
-        </p>
-        <br />
-        <ul>
-          <li>
-            The first character must be a letter (a–z or A–Z) or an underscore (_).
-          </li>
-          <li>
-            All subsequent characters may be letters, digits (0–9), or underscores.
-          </li>
-          <li>
-            Any input string not following these rules is rejected.
-          </li>
-        </ul><br></br>
-        <p>
-        You may freely drag and zoom the objects within the model until you are comfortable navigating and interacting with it.
-        </p>
-        <footer>
+    <div className={`modal-overlay ${isVisible ? 'visible' : ''}`} onClick={handleClose}>
+      <div 
+        className={`modal-content ${isDarkMode ? 'dark-mode' : 'light-mode'}`} 
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-header">
+          <div className="header-dots">
+            <span className="dot red"></span>
+            <span className="dot yellow"></span>
+            <span className="dot green"></span>
+          </div>
+          <h2>Language Rules Information</h2>
+          <div className="header-controls">
+            <div className="theme-toggle">
+              <label className="switch">
+                <input 
+                  type="checkbox" 
+                  checked={isDarkMode} 
+                  onChange={toggleTheme} 
+                />
+                <span className="slider round">
+                  <span className="mode-icon">
+                    {isDarkMode ? '🌙' : '☀️'}
+                  </span>
+                </span>
+              </label>
+            </div>
+            <button className="close-button" onClick={handleClose}>×</button>
+          </div>
+        </div>
+        
+        <div className="modal-body">
+          <div className="info-card">
+            <div className="info-icon">ℹ️</div>
+            <div>
+              <p>
+                This explains the rules for identifiers recognized by the DFA:
+              </p>
+              <p className="language-def">
+                <strong>Language:</strong> Variable names that start with a letter or underscore, followed by letters, digits, and underscores.
+              </p>
+            </div>
+          </div>
+          
+          <div className="rules-container">
+            <h3>Rules</h3>
+            <ul className="rules-list">
+              <li>
+                <span className="rule-number">1</span>
+                The first character must be a letter (a–z or A–Z) or an underscore (_).
+              </li>
+              <li>
+                <span className="rule-number">2</span>
+                All subsequent characters may be letters, digits (0–9), or underscores.
+              </li>
+              <li>
+                <span className="rule-number">3</span>
+                Any input string not following these rules is rejected.
+              </li>
+            </ul>
+          </div>
+          
+          <div className="note-container">
+            <p>
+              You may freely drag and zoom the objects within the model until you are comfortable navigating and interacting with it.
+            </p>
+          </div>
+
+          <div className="indicators-container">
+            <h3>Indicators</h3>
+            <ul className="indicators-list">
+              <li>
+                <div className="indicator-icon">🔵</div>
+                A sphere with a ring is an accepting state; the rest are not.
+              </li>
+              <li>
+                <div className="indicator-icon">🟢</div>
+                The arrow indicator will turn green when in an accepted state, and red when in a non-accepted state.
+              </li>
+              <li>
+                <div className="indicator-icon">🔄</div>
+                The loop with arrow will rotate when the input transitions back to its current state.
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        <div className="modal-footer">
           <p>Built by Isiderio, Christian A. 📌</p>
-        </footer>
-        <button className="close-button" onClick={onClose}>Close</button>
+          <button className="okay-button pulse" onClick={handleClose}>Got it!</button>
+        </div>
       </div>
     </div>
   );
@@ -44,16 +174,25 @@ const ThreeScene = () => {
   const canvasRef = useRef(null);
   const [inputString, setInputString] = useState('');
   const [currentState, setCurrentState] = useState('q0');
+  const currentStateRef = useRef('q0');
   const [isAccepted, setIsAccepted] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isProcessDone, setIsProcessDone] = useState(true);
+  const [isProcessDone, setIsProcessDone] = useState(false);
+  const isProcessDoneRef = useRef(false);
   const [currentChar, setCurrentChar] = useState('');
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [animationFrameId, setAnimationFrameId] = useState(null);
   const [arrows, setArrows] = useState({});
   const [sceneObjects, setSceneObjects] = useState({});
-  const [isHelpOpen, setIsHelpOpen] = useState(false); // For modal toggle
+  const [isHelpOpen, setIsHelpOpen] = useState(true); // For modal toggle
+  const [isDarkMode, setIsDarkMode] = useState(true); // Dark mode by default
 
+  // New state to track Information Board visibility
+  const [isInfoBoardVisible, setIsInfoBoardVisible] = useState(true);
+
+  const toggleInfoBoard = () => {
+    setIsInfoBoardVisible(!isInfoBoardVisible);
+  };
   // DFA Transition function
   const transition = (state, input) => {
     if (state === 'q0') {
@@ -106,6 +245,8 @@ const ThreeScene = () => {
     setCurrentIndex(-1);
     setCurrentChar('');
     setIsAccepted(true);
+    setIsProcessDone(false);
+
     
     // Reset arrow colors
     Object.keys(arrows).forEach(key => {
@@ -133,6 +274,8 @@ const ThreeScene = () => {
       // Update UI
       setCurrentIndex(i);
       setCurrentChar(char);
+      setIsProcessDone((i+1 == (inputString.length)));
+      
       // Get the transition key and highlight the arrow
       const transitionKey = getTransitionKey(state, nextState, char);
       
@@ -161,10 +304,6 @@ const ThreeScene = () => {
       state = nextState;
       setIsAccepted(state === 'q1');
       setCurrentState(state);
-      if(i === ((inputString.length)-1)){
-        setIsProcessDone(i === ((inputString.length)-1));
-        return;
-      }
     
       // Wait between transitions
       await new Promise(resolve => setTimeout(resolve, 200));
@@ -183,6 +322,26 @@ const ThreeScene = () => {
   const toggleHelpModal = () => {
     setIsHelpOpen(!isHelpOpen);
   };
+
+  useEffect(() => {
+    isProcessDoneRef.current = isProcessDone;
+    currentStateRef.current = currentState;
+  }, [isProcessDone, currentState]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+  
+  useEffect(() => {
+    // Toggle class based on isDarkMode state
+    if (isDarkMode) {
+      document.body.classList.add('dark-mode');
+      document.body.classList.remove('light-mode');
+    } else {
+      document.body.classList.add('light-mode');
+      document.body.classList.remove('dark-mode');
+    }
+  }, [isDarkMode]);
 
   useEffect(() => {
     // Scene setup
@@ -493,8 +652,15 @@ const ThreeScene = () => {
     const indicatorGeometry = new THREE.ConeGeometry(0.3, 0.8, 32);
     const indicatorMaterial = new THREE.MeshBasicMaterial({ color: 0x3498db });
     const indicator = new THREE.Mesh(indicatorGeometry, indicatorMaterial);
-    indicator.position.copy(q0Sphere.position);
-    indicator.position.y += 3;
+    if (currentStateRef.current === 'q0'){
+      indicator.position.copy(q0Sphere.position);
+    }else if (currentStateRef.current === 'q1'){
+      indicator.position.copy(q1Sphere.position);
+    }else{
+      indicator.position.copy(q2Sphere.position);
+    }
+
+    indicator.position.y += 4;
     indicator.rotation.x = Math.PI;
     scene.add(indicator);
     
@@ -504,10 +670,10 @@ const ThreeScene = () => {
     // Function to update position of indicator
     const updateIndicator = () => {
       let targetPosition;
-      if (currentState === 'q0') {
+      if (currentStateRef.current === 'q0') {
         targetPosition = q0Sphere.position.clone();
         indicatorMaterial.color.set(0xff0000);
-      } else if (currentState === 'q1') {
+      } else if (currentStateRef.current === 'q1') {
         targetPosition = q1Sphere.position.clone();
         indicatorMaterial.color.set(0x00ff00);
       } else {
@@ -516,7 +682,7 @@ const ThreeScene = () => {
       }
       
       // Adjust y position to be above the sphere
-      targetPosition.y += 3;
+      targetPosition.y += 4;
       indicator.position.lerp(targetPosition, 0.1);
     };
     
@@ -546,8 +712,8 @@ const ThreeScene = () => {
       controls.update();
       // console.log(currentState);
       // Update revolving arrow on q2 loop
-      if(currentState === 'q2'){
-        theta += 0.05;
+      if(currentState === 'q2' && !isProcessDoneRef.current){
+        theta += 0.086;
       }else{
         theta += 0;
       }
@@ -561,8 +727,8 @@ const ThreeScene = () => {
       
       // Update revolving arrow on q1 loop
       
-      if(currentState === 'q1'){
-        theta1 += 0.05;
+      if(currentState === 'q1' && !isProcessDoneRef.current){
+        theta1 += 0.086;
       }else{
         theta1 += 0;
       }
@@ -588,12 +754,32 @@ const ThreeScene = () => {
       controls.dispose();
       scene.clear();
     };
-  }, [currentState]);
+  }, [currentState, isProcessDone]);
   
   return (
     <div className="three-scene-container">
       <canvas ref={canvasRef} className="canvas" />
-      <div className="controls">
+      <ThemeToggle isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
+      
+      {/* Toggle button for Information Board */}
+      <button 
+        className="info-board-toggle"
+        onClick={toggleInfoBoard}
+      >
+        {isInfoBoardVisible ? 'Hide Info' : 'Show Info'}
+      </button>
+      
+      {/* Conditionally render controls based on isInfoBoardVisible */}
+      <div className={`controls ${isInfoBoardVisible ? 'visible' : 'hidden'}`}>
+        <div className="info-header">
+          <h3 className='information-board'>Information Board</h3>
+          <button 
+            className="collapse-button"
+            onClick={toggleInfoBoard}
+          >
+            ✕
+          </button>
+        </div>
         <div className="input-container">
           <label htmlFor="dfa-input">Test string:</label>
           <input
@@ -624,9 +810,19 @@ const ThreeScene = () => {
             {isAccepted ? "Accepted" : "Rejected"}
           </span></p>
           {currentIndex >= 0 && (
-            <p>Processing: <span className="current-char">
-              Character at position {currentIndex}: "{currentChar}"
-            </span></p>
+            <>
+              <p>Input: <span className="input-display">
+                {inputString.split('').map((char, index) => (
+                  <span key={index} className={index === currentIndex ? "current-character" : ""}>
+                    {index === currentIndex ? `[${char}]` : char}
+                  </span>
+                ))}
+              </span></p>
+              <p>Processing: <span className="current-char">
+                Character at position {currentIndex+1} : "{currentChar}"<br></br>
+                Process Status: {(isProcessDone)? "Complete":"In Progress..."}
+              </span></p>
+            </>
           )}
         </div>
       </div>
@@ -634,5 +830,6 @@ const ThreeScene = () => {
     </div>
   );
 };
+
 
 export default ThreeScene;
